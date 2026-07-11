@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { MongooseModule } from '@nestjs/mongoose';
 import { ConfigModule, ConfigService } from '@nestjs/config';
+import type { Connection } from 'mongoose';
 
 @Module({
   imports: [
@@ -8,10 +9,15 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
       imports: [ConfigModule],
       inject: [ConfigService],
       useFactory: (configService: ConfigService) => ({
-        uri: configService.get<string>('mongo.uri'),
-        connectionFactory: (connection: any) => {
+        uri: configService.getOrThrow<string>('mongo.uri'),
+        connectionFactory: (connection: Connection) => {
           connection.on('connected', () => console.log('✅ MongoDB connected'));
-          connection.on('error', (err: any) => console.error('❌ MongoDB error:', err.message));
+          connection.on('error', (err: unknown) =>
+            console.error(
+              '❌ MongoDB error:',
+              err instanceof Error ? err.message : err,
+            ),
+          );
           return connection;
         },
       }),
