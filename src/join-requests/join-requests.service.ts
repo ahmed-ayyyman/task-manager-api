@@ -12,6 +12,7 @@ import {
   JoinRequestStatus,
 } from './join-request.schema';
 import { UpdateJoinRequestDto } from './dto/update-join-request.dto';
+import { NotificationsService } from '../notifications/notifications.service';
 import { Project, ProjectDocument } from '../projects/project.schema';
 import {
   ProjectMember,
@@ -28,6 +29,7 @@ export class JoinRequestsService {
     private readonly projectMemberModel: Model<ProjectMemberDocument>,
     @InjectModel(Project.name)
     private readonly projectModel: Model<ProjectDocument>,
+    private readonly notificationsService: NotificationsService,
   ) {}
 
   async create(projectId: string, userId: string, userRole: UserRole) {
@@ -67,6 +69,22 @@ export class JoinRequestsService {
       projectId: new Types.ObjectId(projectId),
       observerId: new Types.ObjectId(userId),
     });
+
+    const leaderMembership = await this.projectMemberModel
+      .findOne({
+        projectId: new Types.ObjectId(projectId),
+        role: UserRole.Leader,
+      })
+      .exec();
+
+    if (leaderMembership) {
+      await this.notificationsService.create(
+        leaderMembership.userId.toString(),
+        'join_request',
+        'A new join request has been submitted to your project',
+        userId,
+      );
+    }
 
     return joinRequest;
   }
@@ -125,6 +143,20 @@ export class JoinRequestsService {
           role: UserRole.Member,
         },
         { upsert: true, new: true, setDefaultsOnInsert: true },
+      );
+
+      await this.notificationsService.create(
+        joinRequest.observerId.toString(),
+        'join_approved',
+        `Your join request for project "${project.name}" has been approved`,
+        userId,
+      );
+    } else {
+      await this.notificationsService.create(
+        joinRequest.observerId.toString(),
+        'join_rejected',
+        `Your join request for project "${project.name}" has been rejected`,
+        userId,
       );
     }
 

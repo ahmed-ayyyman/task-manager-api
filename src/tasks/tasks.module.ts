@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { MongooseModule } from '@nestjs/mongoose';
+import { NotificationsModule } from '../notifications/notifications.module';
 import {
   ProjectMember,
   ProjectMemberSchema,
@@ -14,6 +15,7 @@ import { TasksService } from './tasks.service';
       { name: Task.name, schema: TaskSchema },
       { name: ProjectMember.name, schema: ProjectMemberSchema },
     ]),
+    NotificationsModule,
   ],
   controllers: [TasksController],
   providers: [TasksService],

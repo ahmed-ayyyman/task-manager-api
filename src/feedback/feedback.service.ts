@@ -8,6 +8,7 @@ import { Model, Types } from 'mongoose';
 import { CreateFeedbackDto } from './dto/create-feedback.dto';
 import { Feedback, FeedbackDocument } from './feedback.schema';
 import { Task, TaskDocument } from '../tasks/task.schema';
+import { NotificationsService } from '../notifications/notifications.service';
 import { ProjectMember, ProjectMemberDocument } from '../projects/project-member.schema';
 
 @Injectable()
@@ -19,6 +20,7 @@ export class FeedbackService {
     private readonly taskModel: Model<TaskDocument>,
     @InjectModel(ProjectMember.name)
     private readonly projectMemberModel: Model<ProjectMemberDocument>,
+    private readonly notificationsService: NotificationsService,
   ) {}
 
   async create(taskId: string, createFeedbackDto: CreateFeedbackDto, userId: string) {
@@ -34,6 +36,15 @@ export class FeedbackService {
       userId: new Types.ObjectId(userId),
       comment: createFeedbackDto.comment,
     });
+
+    if (task.assignedTo && task.assignedTo.toString() !== userId) {
+      await this.notificationsService.create(
+        task.assignedTo.toString(),
+        'new_feedback',
+        `New comment on task "${task.title}": "${createFeedbackDto.comment.substring(0, 80)}"`,
+        userId,
+      );
+    }
 
     return feedback;
   }

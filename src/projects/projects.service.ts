@@ -7,6 +7,7 @@ import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
 import { AddProjectMemberDto } from './dto/add-project-member.dto';
 import { CreateProjectDto } from './dto/create-project.dto';
+import { NotificationsService } from '../notifications/notifications.service';
 import { Project, ProjectDocument } from './project.schema';
 import { ProjectMember, ProjectMemberDocument } from './project-member.schema';
 import { UserRole } from '../users/user.schema';
@@ -20,6 +21,7 @@ export class ProjectsService {
     @InjectModel(ProjectMember.name)
     private readonly projectMemberModel: Model<ProjectMemberDocument>,
     private readonly usersService: UsersService,
+    private readonly notificationsService: NotificationsService,
   ) {}
 
   private async ensureProjectLeader(projectId: string, userId: string) {
@@ -120,7 +122,7 @@ export class ProjectsService {
       throw new NotFoundException('User not found');
     }
 
-    return this.projectMemberModel.findOneAndUpdate(
+    const member = await this.projectMemberModel.findOneAndUpdate(
       { projectId, userId: addProjectMemberDto.userId },
       {
         projectId,
@@ -129,6 +131,15 @@ export class ProjectsService {
       },
       { upsert: true, new: true, setDefaultsOnInsert: true },
     );
+
+    await this.notificationsService.create(
+      addProjectMemberDto.userId,
+      'member_added',
+      `You have been added to project "${project.name}" as ${addProjectMemberDto.role}`,
+      currentUserId,
+    );
+
+    return member;
   }
 
   async listMembers(projectId: string, userId: string) {

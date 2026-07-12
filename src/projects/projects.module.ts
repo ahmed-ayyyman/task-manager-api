@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { MongooseModule } from '@nestjs/mongoose';
+import { NotificationsModule } from '../notifications/notifications.module';
 import { UsersModule } from '../users/users.module';
 import { Project, ProjectSchema } from './project.schema';
 import { ProjectMember, ProjectMemberSchema } from './project-member.schema';
@@ -9,6 +10,7 @@ import { ProjectsService } from './projects.service';
 @Module({
   imports: [
     UsersModule,
+    NotificationsModule,
     MongooseModule.forFeature([
       { name: Project.name, schema: ProjectSchema },
       { name: ProjectMember.name, schema: ProjectMemberSchema },

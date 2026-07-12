@@ -12,6 +12,7 @@ import {
   ProjectMember,
   ProjectMemberDocument,
 } from '../projects/project-member.schema';
+import { NotificationsService } from '../notifications/notifications.service';
 import { UserRole } from '../users/user.schema';
 
 @Injectable()
@@ -20,6 +21,7 @@ export class TasksService {
     @InjectModel(Task.name) private readonly taskModel: Model<TaskDocument>,
     @InjectModel(ProjectMember.name)
     private readonly projectMemberModel: Model<ProjectMemberDocument>,
+    private readonly notificationsService: NotificationsService,
   ) {}
 
   async create(
@@ -41,6 +43,15 @@ export class TasksService {
       dueDate: createTaskDto.dueDate ? new Date(createTaskDto.dueDate) : null,
       createdBy: new Types.ObjectId(userId),
     });
+
+    if (createTaskDto.assignedTo) {
+      await this.notificationsService.create(
+        createTaskDto.assignedTo,
+        'task_assigned',
+        `You have been assigned to task "${task.title}"`,
+        userId,
+      );
+    }
 
     return task;
   }
@@ -116,6 +127,13 @@ export class TasksService {
     }
     if (updateTaskDto.assignedTo !== undefined) {
       updateData.assignedTo = new Types.ObjectId(updateTaskDto.assignedTo);
+
+      await this.notificationsService.create(
+        updateTaskDto.assignedTo,
+        'task_assigned',
+        `You have been assigned to task "${task.title}"`,
+        userId,
+      );
     }
 
     const updated = await this.taskModel

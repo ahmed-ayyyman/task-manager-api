@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { MongooseModule } from '@nestjs/mongoose';
+import { NotificationsModule } from '../notifications/notifications.module';
 import { Project, ProjectSchema } from '../projects/project.schema';
 import {
   ProjectMember,
@@ -16,6 +17,7 @@ import { JoinRequestsService } from './join-requests.service';
       { name: Project.name, schema: ProjectSchema },
       { name: ProjectMember.name, schema: ProjectMemberSchema },
     ]),
+    NotificationsModule,
   ],
   controllers: [JoinRequestsController],
   providers: [JoinRequestsService],

@@ -28,4 +28,8 @@ export class CreateTaskDto {
   @IsOptional()
   @IsDateString()
   dueDate?: string;
+
+  @IsOptional()
+  @IsMongoId()
+  assignedTo?: string;
 }

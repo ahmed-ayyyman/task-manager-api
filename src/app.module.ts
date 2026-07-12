@@ -7,6 +7,7 @@ import { DatabaseModule } from './database/database.module';
 import { AuthModule } from './auth/auth.module';
 import { FeedbackModule } from './feedback/feedback.module';
 import { JoinRequestsModule } from './join-requests/join-requests.module';
+import { NotificationsModule } from './notifications/notifications.module';
 import { ProjectsModule } from './projects/projects.module';
 import { SubtasksModule } from './subtasks/subtasks.module';
 import { TasksModule } from './tasks/tasks.module';
@@ -26,6 +27,7 @@ import { UsersModule } from './users/users.module';
     SubtasksModule,
     FeedbackModule,
     JoinRequestsModule,
+    NotificationsModule,
   ],
   controllers: [AppController],
   providers: [AppService],
