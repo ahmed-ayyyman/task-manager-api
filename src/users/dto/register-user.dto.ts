@@ -11,16 +11,16 @@ import { UserRole } from '../user.schema';
 export class RegisterUserDto {
   @IsString()
   @IsNotEmpty()
-  name: string;
+  name!: string;
 
   @IsEmail()
   @IsNotEmpty()
-  email: string;
+  email!: string;
 
   @IsString()
   @IsNotEmpty()
   @MinLength(8)
-  password: string;
+  password!: string;
 
   @IsOptional()
   @IsEnum(UserRole)

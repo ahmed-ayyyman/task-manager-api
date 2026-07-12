@@ -11,12 +11,12 @@ import { TaskPriority } from '../task.schema';
 
 export class CreateTaskDto {
   @IsMongoId()
-  projectId: string;
+  projectId!: string;
 
   @IsString()
   @IsNotEmpty()
   @MaxLength(200)
-  title: string;
+  title!: string;
 
   @IsOptional()
   @IsString()

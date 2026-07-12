@@ -4,5 +4,5 @@ export class CreateFeedbackDto {
   @IsString()
   @IsNotEmpty()
   @MaxLength(2000)
-  comment: string;
+  comment!: string;
 }

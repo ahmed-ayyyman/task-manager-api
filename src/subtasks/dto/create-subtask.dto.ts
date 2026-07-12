@@ -4,5 +4,5 @@ export class CreateSubtaskDto {
   @IsString()
   @IsNotEmpty()
   @MaxLength(200)
-  title: string;
+  title!: string;
 }
