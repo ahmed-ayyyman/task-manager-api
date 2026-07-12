@@ -1,7 +1,7 @@
-import { IsEnum } from 'class-validator';
+import { IsIn } from 'class-validator';
 import { JoinRequestStatus } from '../join-request.schema';
 
 export class UpdateJoinRequestDto {
-  @IsEnum([JoinRequestStatus.Approved, JoinRequestStatus.Rejected])
+  @IsIn([JoinRequestStatus.Approved, JoinRequestStatus.Rejected])
   status: JoinRequestStatus;
 }

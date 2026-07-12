@@ -2,6 +2,7 @@ import {
   IsDateString,
   IsEnum,
   IsMongoId,
+  IsNotEmpty,
   IsOptional,
   IsString,
   MaxLength,
@@ -13,6 +14,7 @@ export class CreateTaskDto {
   projectId: string;
 
   @IsString()
+  @IsNotEmpty()
   @MaxLength(200)
   title: string;
 
