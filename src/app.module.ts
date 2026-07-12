@@ -6,6 +6,7 @@ import configuration from './config/configuration';
 import { DatabaseModule } from './database/database.module';
 import { AuthModule } from './auth/auth.module';
 import { FeedbackModule } from './feedback/feedback.module';
+import { JoinRequestsModule } from './join-requests/join-requests.module';
 import { ProjectsModule } from './projects/projects.module';
 import { SubtasksModule } from './subtasks/subtasks.module';
 import { TasksModule } from './tasks/tasks.module';
@@ -24,6 +25,7 @@ import { UsersModule } from './users/users.module';
     TasksModule,
     SubtasksModule,
     FeedbackModule,
+    JoinRequestsModule,
   ],
   controllers: [AppController],
   providers: [AppService],
