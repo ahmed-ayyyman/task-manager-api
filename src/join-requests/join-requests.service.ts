@@ -14,10 +14,6 @@ import {
 import { UpdateJoinRequestDto } from './dto/update-join-request.dto';
 import { NotificationsService } from '../notifications/notifications.service';
 import { Project, ProjectDocument } from '../projects/project.schema';
-import {
-  ProjectMember,
-  ProjectMemberDocument,
-} from '../projects/project-member.schema';
 import { UserRole } from '../users/user.schema';
 
 @Injectable()
@@ -25,8 +21,6 @@ export class JoinRequestsService {
   constructor(
     @InjectModel(JoinRequest.name)
     private readonly joinRequestModel: Model<JoinRequestDocument>,
-    @InjectModel(ProjectMember.name)
-    private readonly projectMemberModel: Model<ProjectMemberDocument>,
     @InjectModel(Project.name)
     private readonly projectModel: Model<ProjectDocument>,
     private readonly notificationsService: NotificationsService,
@@ -42,12 +36,9 @@ export class JoinRequestsService {
       throw new NotFoundException('Project not found');
     }
 
-    const existingMember = await this.projectMemberModel
-      .findOne({
-        projectId: new Types.ObjectId(projectId),
-        userId: new Types.ObjectId(userId),
-      })
-      .exec();
+    const existingMember = project.members.some(
+      (m) => m.userId.toString() === userId,
+    );
 
     if (existingMember) {
       throw new ConflictException('You are already a member of this project');
@@ -70,16 +61,13 @@ export class JoinRequestsService {
       observerId: new Types.ObjectId(userId),
     });
 
-    const leaderMembership = await this.projectMemberModel
-      .findOne({
-        projectId: new Types.ObjectId(projectId),
-        role: UserRole.Leader,
-      })
-      .exec();
+    const leaderMember = project.members.find(
+      (m) => m.role === UserRole.Leader,
+    );
 
-    if (leaderMembership) {
+    if (leaderMember) {
       await this.notificationsService.create(
-        leaderMembership.userId.toString(),
+        leaderMember.userId.toString(),
         'join_request',
         'A new join request has been submitted to your project',
         userId,
@@ -132,18 +120,23 @@ export class JoinRequestsService {
     await joinRequest.save();
 
     if (updateJoinRequestDto.status === JoinRequestStatus.Approved) {
-      await this.projectMemberModel.findOneAndUpdate(
-        {
-          projectId: joinRequest.projectId,
-          userId: joinRequest.observerId,
-        },
-        {
-          projectId: joinRequest.projectId,
-          userId: joinRequest.observerId,
-          role: UserRole.Member,
-        },
-        { upsert: true, new: true, setDefaultsOnInsert: true },
+      const alreadyMember = project.members.some(
+        (m) => m.userId.toString() === joinRequest.observerId.toString(),
       );
+
+      if (!alreadyMember) {
+        await this.projectModel
+          .findByIdAndUpdate(projectId, {
+            $push: {
+              members: {
+                userId: joinRequest.observerId,
+                role: UserRole.Member,
+                joinedAt: new Date(),
+              },
+            },
+          })
+          .exec();
+      }
 
       await this.notificationsService.create(
         joinRequest.observerId.toString(),
@@ -164,15 +157,19 @@ export class JoinRequestsService {
   }
 
   private async ensureProjectLeader(projectId: string, userId: string) {
-    const membership = await this.projectMemberModel
+    const project = await this.projectModel
       .findOne({
-        projectId: new Types.ObjectId(projectId),
-        userId: new Types.ObjectId(userId),
-        role: UserRole.Leader,
+        _id: projectId,
+        members: {
+          $elemMatch: {
+            userId: new Types.ObjectId(userId),
+            role: UserRole.Leader,
+          },
+        },
       })
       .exec();
 
-    if (!membership) {
+    if (!project) {
       throw new ForbiddenException('Leader access required');
     }
   }

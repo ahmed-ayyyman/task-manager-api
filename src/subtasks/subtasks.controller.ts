@@ -12,12 +12,12 @@ import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 import type { AuthUser } from '../common/types/auth-user.type';
 import { CreateSubtaskDto } from './dto/create-subtask.dto';
 import { UpdateSubtaskDto } from './dto/update-subtask.dto';
-import { SubtasksService } from './subtasks.service';
+import { TasksService } from '../tasks/tasks.service';
 
 @UseGuards(JwtAuthGuard)
 @Controller('tasks')
 export class SubtasksController {
-  constructor(private readonly subtasksService: SubtasksService) {}
+  constructor(private readonly tasksService: TasksService) {}
 
   @Post(':taskId/subtasks')
   create(
@@ -25,7 +25,7 @@ export class SubtasksController {
     @Body() createSubtaskDto: CreateSubtaskDto,
     @CurrentUser() user: AuthUser,
   ) {
-    return this.subtasksService.create(taskId, createSubtaskDto, user.id);
+    return this.tasksService.createSubtask(taskId, createSubtaskDto, user.id);
   }
 
   @Patch(':taskId/subtasks/:subtaskId')
@@ -35,7 +35,7 @@ export class SubtasksController {
     @Body() updateSubtaskDto: UpdateSubtaskDto,
     @CurrentUser() user: AuthUser,
   ) {
-    return this.subtasksService.updateStatus(
+    return this.tasksService.updateSubtaskStatus(
       taskId,
       subtaskId,
       updateSubtaskDto,
@@ -49,6 +49,6 @@ export class SubtasksController {
     @Param('subtaskId') subtaskId: string,
     @CurrentUser() user: AuthUser,
   ) {
-    return this.subtasksService.delete(taskId, subtaskId, user.id);
+    return this.tasksService.deleteSubtask(taskId, subtaskId, user.id);
   }
 }

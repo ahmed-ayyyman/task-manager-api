@@ -7,11 +7,10 @@ import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
 import { CreateTaskDto } from './dto/create-task.dto';
 import { UpdateTaskDto } from './dto/update-task.dto';
-import { Task, TaskDocument } from './task.schema';
-import {
-  ProjectMember,
-  ProjectMemberDocument,
-} from '../projects/project-member.schema';
+import { CreateSubtaskDto } from '../subtasks/dto/create-subtask.dto';
+import { UpdateSubtaskDto } from '../subtasks/dto/update-subtask.dto';
+import { Task, TaskDocument, SubtaskStatus } from './task.schema';
+import { Project, ProjectDocument } from '../projects/project.schema';
 import { NotificationsService } from '../notifications/notifications.service';
 import { UserRole } from '../users/user.schema';
 
@@ -19,8 +18,8 @@ import { UserRole } from '../users/user.schema';
 export class TasksService {
   constructor(
     @InjectModel(Task.name) private readonly taskModel: Model<TaskDocument>,
-    @InjectModel(ProjectMember.name)
-    private readonly projectMemberModel: Model<ProjectMemberDocument>,
+    @InjectModel(Project.name)
+    private readonly projectModel: Model<ProjectDocument>,
     private readonly notificationsService: NotificationsService,
   ) {}
 
@@ -156,29 +155,136 @@ export class TasksService {
     await this.taskModel.findByIdAndDelete(taskId).exec();
   }
 
+  async createSubtask(
+    taskId: string,
+    createSubtaskDto: CreateSubtaskDto,
+    userId: string,
+  ) {
+    const task = await this.taskModel.findById(taskId).exec();
+    if (!task) {
+      throw new NotFoundException('Task not found');
+    }
+
+    await this.ensureProjectMembership(task.projectId.toString(), userId);
+
+    const subtask = await this.taskModel
+      .findByIdAndUpdate(
+        taskId,
+        {
+          $push: {
+            subtasks: { title: createSubtaskDto.title },
+          },
+        },
+        { new: true },
+      )
+      .exec();
+
+    await this.recalculateProgress(taskId);
+
+    return subtask!.subtasks[subtask!.subtasks.length - 1];
+  }
+
+  async updateSubtaskStatus(
+    taskId: string,
+    subtaskId: string,
+    updateSubtaskDto: UpdateSubtaskDto,
+    userId: string,
+  ) {
+    const task = await this.taskModel.findOne({
+      _id: taskId,
+      'subtasks._id': subtaskId,
+    }).exec();
+
+    if (!task) {
+      throw new NotFoundException('Task or subtask not found');
+    }
+
+    await this.ensureProjectMembership(task.projectId.toString(), userId);
+
+    await this.taskModel
+      .findOneAndUpdate(
+        { _id: taskId, 'subtasks._id': subtaskId },
+        { $set: { 'subtasks.$.status': updateSubtaskDto.status } },
+        { new: true },
+      )
+      .exec();
+
+    await this.recalculateProgress(taskId);
+
+    const updated = await this.taskModel.findById(taskId).exec();
+    return updated!.subtasks.find(
+      (s) => s._id.toString() === subtaskId,
+    );
+  }
+
+  async deleteSubtask(taskId: string, subtaskId: string, userId: string) {
+    const task = await this.taskModel.findOne({
+      _id: taskId,
+      'subtasks._id': subtaskId,
+    }).exec();
+
+    if (!task) {
+      throw new NotFoundException('Task or subtask not found');
+    }
+
+    await this.ensureProjectMembership(task.projectId.toString(), userId);
+
+    await this.taskModel
+      .findByIdAndUpdate(taskId, { $pull: { subtasks: { _id: subtaskId } } })
+      .exec();
+
+    await this.recalculateProgress(taskId);
+  }
+
+  private async recalculateProgress(taskId: string) {
+    const task = await this.taskModel.findById(taskId).exec();
+    if (!task) return;
+
+    const subtasks = task.subtasks;
+    if (subtasks.length === 0) {
+      await this.taskModel
+        .findByIdAndUpdate(taskId, { $set: { progress: 0 } })
+        .exec();
+      return;
+    }
+
+    const completed = subtasks.filter(
+      (s) => s.status === SubtaskStatus.Completed,
+    ).length;
+
+    const progress = Math.round((completed / subtasks.length) * 100);
+    await this.taskModel
+      .findByIdAndUpdate(taskId, { $set: { progress } })
+      .exec();
+  }
+
   private async ensureProjectLeader(projectId: string, userId: string) {
-    const membership = await this.projectMemberModel
+    const project = await this.projectModel
       .findOne({
-        projectId: new Types.ObjectId(projectId),
-        userId: new Types.ObjectId(userId),
-        role: UserRole.Leader,
+        _id: projectId,
+        members: {
+          $elemMatch: {
+            userId: new Types.ObjectId(userId),
+            role: UserRole.Leader,
+          },
+        },
       })
       .exec();
 
-    if (!membership) {
+    if (!project) {
       throw new ForbiddenException('Leader access required');
     }
   }
 
   private async ensureProjectMembership(projectId: string, userId: string) {
-    const membership = await this.projectMemberModel
+    const project = await this.projectModel
       .findOne({
-        projectId: new Types.ObjectId(projectId),
-        userId: new Types.ObjectId(userId),
+        _id: projectId,
+        'members.userId': new Types.ObjectId(userId),
       })
       .exec();
 
-    if (!membership) {
+    if (!project) {
       throw new ForbiddenException('You are not a member of this project');
     }
   }

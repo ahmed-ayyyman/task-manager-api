@@ -64,6 +64,11 @@ export class UsersService {
     return this.userModel.findById(id).exec();
   }
 
+  async findByIds(ids: Types.ObjectId[], projection?: string) {
+    if (ids.length === 0) return [];
+    return this.userModel.find({ _id: { $in: ids } }, projection).exec();
+  }
+
   async getSafeById(id: string) {
     const user = await this.findById(id);
     if (!user) {

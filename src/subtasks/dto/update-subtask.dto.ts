@@ -1,5 +1,5 @@
 import { IsEnum } from 'class-validator';
-import { SubtaskStatus } from '../subtask.schema';
+import { SubtaskStatus } from '../../tasks/task.schema';
 
 export class UpdateSubtaskDto {
   @IsEnum(SubtaskStatus)

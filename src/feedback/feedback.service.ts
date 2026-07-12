@@ -9,7 +9,7 @@ import { CreateFeedbackDto } from './dto/create-feedback.dto';
 import { Feedback, FeedbackDocument } from './feedback.schema';
 import { Task, TaskDocument } from '../tasks/task.schema';
 import { NotificationsService } from '../notifications/notifications.service';
-import { ProjectMember, ProjectMemberDocument } from '../projects/project-member.schema';
+import { Project, ProjectDocument } from '../projects/project.schema';
 
 @Injectable()
 export class FeedbackService {
@@ -18,8 +18,8 @@ export class FeedbackService {
     private readonly feedbackModel: Model<FeedbackDocument>,
     @InjectModel(Task.name)
     private readonly taskModel: Model<TaskDocument>,
-    @InjectModel(ProjectMember.name)
-    private readonly projectMemberModel: Model<ProjectMemberDocument>,
+    @InjectModel(Project.name)
+    private readonly projectModel: Model<ProjectDocument>,
     private readonly notificationsService: NotificationsService,
   ) {}
 
@@ -65,14 +65,14 @@ export class FeedbackService {
   }
 
   private async ensureProjectMember(projectId: string, userId: string) {
-    const membership = await this.projectMemberModel
+    const project = await this.projectModel
       .findOne({
-        projectId: new Types.ObjectId(projectId),
-        userId: new Types.ObjectId(userId),
+        _id: projectId,
+        'members.userId': new Types.ObjectId(userId),
       })
       .exec();
 
-    if (!membership) {
+    if (!project) {
       throw new ForbiddenException('You are not a member of this project');
     }
   }

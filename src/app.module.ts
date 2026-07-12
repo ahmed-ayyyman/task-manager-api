@@ -1,17 +1,18 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
-import { AppController } from './app.controller';
-import { AppService } from './app.service';
+import { HealthController } from './health.controller';
 import configuration from './config/configuration';
 import { DatabaseModule } from './database/database.module';
 import { AuthModule } from './auth/auth.module';
 import { FeedbackModule } from './feedback/feedback.module';
+import { InvitedMembersModule } from './invited-members/invited-members.module';
 import { JoinRequestsModule } from './join-requests/join-requests.module';
 import { LoggerModule } from 'nestjs-pino';
 import { NotificationsModule } from './notifications/notifications.module';
 import { ProjectsModule } from './projects/projects.module';
 import { SubtasksModule } from './subtasks/subtasks.module';
 import { TasksModule } from './tasks/tasks.module';
+import { UsageCountersModule } from './usage-counters/usage-counters.module';
 import { UsersModule } from './users/users.module';
 import * as Joi from 'joi';
 
@@ -41,8 +42,9 @@ import * as Joi from 'joi';
     FeedbackModule,
     JoinRequestsModule,
     NotificationsModule,
+    InvitedMembersModule,
+    UsageCountersModule,
   ],
-  controllers: [AppController],
-  providers: [AppService],
+  controllers: [HealthController],
 })
 export class AppModule {}

@@ -3,7 +3,6 @@ import { MongooseModule } from '@nestjs/mongoose';
 import { NotificationsModule } from '../notifications/notifications.module';
 import { UsersModule } from '../users/users.module';
 import { Project, ProjectSchema } from './project.schema';
-import { ProjectMember, ProjectMemberSchema } from './project-member.schema';
 import { ProjectsController } from './projects.controller';
 import { ProjectsService } from './projects.service';
 
@@ -13,7 +12,6 @@ import { ProjectsService } from './projects.service';
     NotificationsModule,
     MongooseModule.forFeature([
       { name: Project.name, schema: ProjectSchema },
-      { name: ProjectMember.name, schema: ProjectMemberSchema },
     ]),
   ],
   controllers: [ProjectsController],

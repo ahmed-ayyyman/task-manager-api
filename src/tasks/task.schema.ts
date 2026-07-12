@@ -15,6 +15,26 @@ export enum TaskStatus {
   Completed = 'Completed',
 }
 
+export enum SubtaskStatus {
+  ToDo = 'To Do',
+  Completed = 'Completed',
+}
+
+class Subtask {
+  _id!: Types.ObjectId;
+
+  @Prop({ required: true, trim: true })
+  title!: string;
+
+  @Prop({ required: true, enum: SubtaskStatus, default: SubtaskStatus.ToDo })
+  status!: SubtaskStatus;
+
+  createdAt!: Date;
+  updatedAt!: Date;
+}
+
+export const SubtaskSchema = SchemaFactory.createForClass(Subtask);
+
 @Schema({ timestamps: true })
 export class Task {
   @Prop({ type: Types.ObjectId, ref: 'Project', required: true })
@@ -43,6 +63,9 @@ export class Task {
 
   @Prop({ default: 0, min: 0, max: 100 })
   progress!: number;
+
+  @Prop({ type: [SubtaskSchema], default: [] })
+  subtasks!: Types.Subdocument<Types.ObjectId> & Subtask[];
 
   createdAt!: Date;
   updatedAt!: Date;
